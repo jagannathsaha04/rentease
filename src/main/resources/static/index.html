@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RentEase - Vehicle Rental Management System</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- Header Navigation Bar -->
+    <header class="navbar">
+      <div class="brand">
+        <div class="brand-icon">🚗</div>
+        <div>
+          <span class="brand-title">RentEase</span>
+          <span class="brand-tag">Spring Boot</span>
+        </div>
+      </div>
+
+      <nav class="nav-tabs">
+        <button class="nav-btn active" id="tab-vehicles" onclick="switchTab('vehicles')">
+          <span>🚘</span> Vehicles
+        </button>
+        <button class="nav-btn" id="tab-customers" onclick="switchTab('customers')">
+          <span>👥</span> Customers
+        </button>
+        <button class="nav-btn" id="tab-rentals" onclick="switchTab('rentals')">
+          <span>🔑</span> Rentals
+        </button>
+      </nav>
+
+      <div class="server-status">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Connecting...</span>
+      </div>
+    </header>
+
+    <!-- Top Summary Statistics Cards -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Total Vehicles</div>
+          <div class="stat-value" id="stat-total-vehicles">0</div>
+        </div>
+        <div class="stat-icon">🏎️</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Available for Rent</div>
+          <div class="stat-value" id="stat-available-vehicles" style="color: #10b981;">0</div>
+        </div>
+        <div class="stat-icon">✨</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Active Rentals</div>
+          <div class="stat-value" id="stat-active-rentals" style="color: #f59e0b;">0</div>
+        </div>
+        <div class="stat-icon">🔑</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Total Customers</div>
+          <div class="stat-value" id="stat-total-customers" style="color: #a5b4fc;">0</div>
+        </div>
+        <div class="stat-icon">👤</div>
+      </div>
+    </section>
+
+    <!-- SECTION 1: VEHICLES -->
+    <main id="section-vehicles">
+      <div class="section-header">
+        <h2 class="section-title"><span>🚘</span> Vehicle Fleet Inventory</h2>
+        <div class="section-actions">
+          <select id="filter-vehicle-type" class="select-input" onchange="renderVehicles()">
+            <option value="ALL">All Types</option>
+            <option value="CAR">Car</option>
+            <option value="BIKE">Bike</option>
+            <option value="SUV">SUV</option>
+          </select>
+          <button class="btn btn-secondary" id="btn-filter-available" onclick="toggleAvailableFilter()">
+            <span>✨</span> Available Only
+          </button>
+          <button class="btn btn-primary" onclick="openAddVehicleModal()">
+            <span>➕</span> Add Vehicle
+          </button>
+        </div>
+      </div>
+
+      <div class="vehicles-grid" id="vehicles-container">
+        <!-- Rendered dynamically -->
+      </div>
+    </main>
+
+    <!-- SECTION 2: CUSTOMERS -->
+    <main id="section-customers" style="display: none;">
+      <div class="section-header">
+        <h2 class="section-title"><span>👥</span> Registered Customers</h2>
+        <div class="section-actions">
+          <button class="btn btn-primary" onclick="openAddCustomerModal()">
+            <span>➕</span> Register Customer
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Customer Name</th>
+              <th>Email Address</th>
+              <th>Phone Number</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="customers-table-body">
+            <!-- Rendered dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <!-- SECTION 3: RENTALS -->
+    <main id="section-rentals" style="display: none;">
+      <div class="section-header">
+        <h2 class="section-title"><span>🔑</span> Rental Operations & History</h2>
+        <div class="section-actions">
+          <button class="btn btn-primary" onclick="openCreateRentalModal()">
+            <span>➕</span> Rent a Vehicle
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Customer</th>
+              <th>Vehicle Details</th>
+              <th>Duration</th>
+              <th>Total Amount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rentals-table-body">
+            <!-- Rendered dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- MODAL 1: Rent a Vehicle -->
+  <div class="modal-overlay" id="modal-rental">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">🔑 Rent a Vehicle</h3>
+        <button class="modal-close" onclick="closeModal('modal-rental')">&times;</button>
+      </div>
+      <form id="form-create-rental" onsubmit="handleCreateRental(event)">
+        <div class="form-group">
+          <label class="form-label" for="rental-customer">Select Customer</label>
+          <select id="rental-customer" class="select-input form-control" required>
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="rental-vehicle">Select Available Vehicle</label>
+          <select id="rental-vehicle" class="select-input form-control" onchange="calculateEstimatedCost()" required>
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="rental-days">Rental Duration (Days)</label>
+          <input type="number" id="rental-days" class="text-input form-control" min="1" value="1" oninput="calculateEstimatedCost()" required>
+        </div>
+
+        <div class="cost-preview">
+          <span class="cost-preview-label">Estimated Total Amount:</span>
+          <span class="cost-preview-value" id="cost-preview-val">₹0.00</span>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-rental')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Confirm Rental</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Add New Vehicle -->
+  <div class="modal-overlay" id="modal-vehicle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">🚘 Add New Vehicle</h3>
+        <button class="modal-close" onclick="closeModal('modal-vehicle')">&times;</button>
+      </div>
+      <form id="form-create-vehicle" onsubmit="handleCreateVehicle(event)">
+        <div class="form-group">
+          <label class="form-label" for="veh-number">Vehicle Registration Number</label>
+          <input type="text" id="veh-number" class="text-input form-control" placeholder="e.g. TN01AB1234" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="veh-model">Vehicle Model</label>
+          <input type="text" id="veh-model" class="text-input form-control" placeholder="e.g. Honda City" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="veh-type">Vehicle Category</label>
+          <select id="veh-type" class="select-input form-control" required>
+            <option value="CAR">CAR</option>
+            <option value="BIKE">BIKE</option>
+            <option value="SUV">SUV</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="veh-rate">Daily Rate (₹/day)</label>
+          <input type="number" id="veh-rate" class="text-input form-control" min="1" step="50" placeholder="e.g. 1500" required>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-vehicle')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Vehicle</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Add New Customer -->
+  <div class="modal-overlay" id="modal-customer">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">👤 Register Customer</h3>
+        <button class="modal-close" onclick="closeModal('modal-customer')">&times;</button>
+      </div>
+      <form id="form-create-customer" onsubmit="handleCreateCustomer(event)">
+        <div class="form-group">
+          <label class="form-label" for="cust-name">Full Name</label>
+          <input type="text" id="cust-name" class="text-input form-control" placeholder="e.g. Rahul Sharma" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="cust-email">Email Address</label>
+          <input type="email" id="cust-email" class="text-input form-control" placeholder="e.g. rahul@example.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="cust-phone">Phone Number</label>
+          <input type="tel" id="cust-phone" class="text-input form-control" placeholder="e.g. 9876543210" required>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-customer')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Customer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
